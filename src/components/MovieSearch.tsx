@@ -1,5 +1,4 @@
 import { useState, useEffect, ChangeEvent } from "react";
-import axios from "axios";
 import { Box, Text, Flex, Input, Select, Image, Heading, Spinner } from "@chakra-ui/react";
 
 import { Movie } from "../utils/types";
@@ -32,8 +31,9 @@ const MovieSearch: React.FC = () => {
     const timer = setTimeout(() => {
       const fetchMovies = async () => {
         const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_API_KEY}&query=${query}&year=${releaseDate}&with_genres=${genre}`;
-        const response = await axios.get(url);
-        setMovies(response.data.results);
+        const response = await fetch(url);
+        const result = await response.json();
+        setMovies(result.results);
         setIsLoading(false);
       };
 

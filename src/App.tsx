@@ -7,7 +7,7 @@ import Footer from "./components/Footer";
 
 function App() {
   return (
-    <Box backgroundColor={"gray.300"}>
+    <Box backgroundColor={"gray.300"} data-testid="parent-component">
       <Header />
       <MovieSearch />
       <Footer />
