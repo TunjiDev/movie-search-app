@@ -12,6 +12,10 @@ https://tj-movie-search.netlify.app
 
   React is a popular JavaScript library for building user interfaces.
 
+- [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+  TypeScript is a superset of JavaScript that adds static typing to the language.
+
 - ![Chakra UI](https://img.shields.io/badge/-Chakra%20UI-319795?style=flat-square&logo=chakraui&logoColor=white)
 
   Chakra UI is a simple and modular component library for building and styling React applications.
