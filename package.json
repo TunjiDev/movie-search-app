@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@auth0/auth0-react": "^2.2.4",
+    "@axa-fr/react-oidc": "^7.13.15-alpha.1268",
     "@chakra-ui/react": "^2.5.1",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
@@ -14,9 +16,13 @@
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "framer-motion": "^9.0.4",
+    "movie-trailer": "^2.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.21.2",
     "react-scripts": "5.0.1",
+    "react-youtube": "^9.0.2",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },

@@ -1,17 +1,32 @@
-import React from "react";
-import { Box } from "@chakra-ui/react";
+import { Route, Routes } from "react-router-dom";
+import { Spinner, Flex } from "@chakra-ui/react";
+import { useAuth0 } from "@auth0/auth0-react";
 
-import Header from "./components/Header";
-import MovieSearch from "./components/MovieSearch";
-import Footer from "./components/Footer";
+import NotFound from "./pages/NotFound";
+import Home from "./pages/Home";
+import Index from "./pages/Index";
 
 function App() {
+  const { isAuthenticated, isLoading } = useAuth0();
+
+  if (isLoading) {
+    return (
+      // @ts-ignore
+      <Flex justify={"center"} align={"center"} minH={"100vh"} backgroundColor={"gray.300"}>
+        <Spinner />
+      </Flex>
+    );
+  }
+
   return (
-    <Box backgroundColor={"gray.300"} data-testid="parent-component">
-      <Header />
-      <MovieSearch />
-      <Footer />
-    </Box>
+    <>
+      <Routes>
+        {!isAuthenticated && !isLoading && <Route path="/" element={<Index />} />}
+        {isAuthenticated && !isLoading && <Route path="/" element={<Index />} />}
+        {isAuthenticated && !isLoading && <Route path="/movies" element={<Home />} />}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 

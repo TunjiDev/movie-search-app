@@ -1,18 +1,28 @@
 import { useState, useEffect, ChangeEvent } from "react";
-import { Box, Text, Flex, Input, Select, Image, Heading, Spinner } from "@chakra-ui/react";
+import { Box, Flex, Input, Select, Spinner, useMediaQuery } from "@chakra-ui/react";
+import toast from "react-hot-toast";
+import movieTrailer from "movie-trailer";
 
-import { Movie } from "../utils/types";
-import { GENRES } from "../utils/constants";
+import TrailerModal from "./TrailerModal";
+import { MovieType } from "../utils/types";
+import Movie from "./Movie";
+import PageNavigationButton from "./PageNavigationBtn";
+import MovieInfoModal from "./MovieInfoModal";
+import BlinkingText from "./BlinkingText";
 
-const imgPath = "https://image.tmdb.org/t/p/w500";
+const ITEMS_PER_PAGE = 5;
 
 const MovieSearch: React.FC = () => {
-  const [query, setQuery] = useState<string>("");
-  const [genre, setGenre] = useState<string>("");
-  const [releaseDate, setReleaseDate] = useState<string>("");
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [httpError, setHttpError] = useState();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [query, setQuery] = useState("");
+  const [genre, setGenre] = useState("");
+  const [releaseDate, setReleaseDate] = useState("");
+  const [movies, setMovies] = useState<MovieType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [trailerUrl, setTrailerUrl] = useState("");
+  const [openMovieInfoModal, setOpenMovieInfoModal] = useState(false);
+  const [movie, setMovie] = useState<MovieType | null>(null);
+  const [isLowerThan420] = useMediaQuery("(max-width: 420px)");
 
   const searchMovieHandler = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -26,21 +36,39 @@ const MovieSearch: React.FC = () => {
     setReleaseDate(e.target.value);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const totalPages = Math.ceil(movies!.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentMovies = movies?.slice(startIndex, endIndex);
+
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => {
       const fetchMovies = async () => {
-        const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_API_KEY}&query=${query}&year=${releaseDate}&with_genres=${genre}`;
+        const url = query
+          ? `https://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_API_KEY}&query=${query}&year=${releaseDate}&with_genres=${genre}`
+          : `https://api.themoviedb.org/3/trending/tv/week?api_key=${process.env.REACT_APP_API_KEY}&language=en-US`;
+
         const response = await fetch(url);
         const result = await response.json();
+
+        if (!result.success && result.status_message) {
+          toast.error(result.status_message);
+          setIsLoading(false);
+          return;
+        }
+
         setMovies(result.results);
         setIsLoading(false);
       };
 
       fetchMovies().catch((err) => {
+        toast.error(err.message);
         setIsLoading(false);
-
-        setHttpError(err.message);
       });
     }, 1000);
 
@@ -49,11 +77,8 @@ const MovieSearch: React.FC = () => {
     };
   }, [query, genre, releaseDate]);
 
-  const truncate = (str: string, n: number) => {
-    return str?.length > n ? str.substr(0, n - 1) + "..." : str;
-  };
-
   let content = (
+    // @ts-ignore
     <Flex justify={"center"} align={"center"}>
       Wow such empty. Search for you favorite movies now!!!
     </Flex>
@@ -61,27 +86,37 @@ const MovieSearch: React.FC = () => {
 
   if (isLoading) {
     content = (
-      <Flex justify={"center"} align={"center"}>
+      <Flex justify={"center"} align={"center"} h={"90vh"}>
         <Spinner />
       </Flex>
     );
   }
 
-  if (httpError) {
-    content = (
-      <Flex justify={"center"} align={"center"}>
-        {httpError}
-      </Flex>
-    );
-  }
+  const handleClick = (movie: MovieType) => {
+    if (trailerUrl) {
+      setTrailerUrl("");
+    } else {
+      movieTrailer(null, { tmdbId: movie.id })
+        .then((url: string) => {
+          const urlParams = new URLSearchParams(new URL(url).search);
+          setTrailerUrl(urlParams.get("v") || "");
+        })
+        .catch((error: any) => {
+          setOpenMovieInfoModal(true);
+          setMovie(movie);
+          return toast.error("No trailer for this video at the moment" || error.message);
+        });
+    }
+  };
 
   return (
     <Box as="main" minHeight={{ base: "82vh", sm: "85vh", md: "85vh", lg: "85vh" }}>
       <Flex
         w={"90%"}
         m={"0 auto"}
-        mt={"1rem"}
+        mt={isLowerThan420 ? "3rem" : "2rem"}
         mb={"2rem"}
+        pt={"3rem"}
         flexDirection={{ base: "column", sm: "column", md: "row", lg: "row" }}
         justify={"space-evenly"}
         align={"center"}
@@ -120,53 +155,37 @@ const MovieSearch: React.FC = () => {
         />
       </Flex>
 
-      <Box ml={0} px={"2rem"}>
-        {movies &&
-          movies.map((movie, index) => (
-            <Box key={index} mb={"2rem"} border={"1px solid gray"}>
-              <Flex justify={"space-between"} direction={{ base: "column", sm: "column", md: "row", lg: "row" }}>
-                <Box flex={1}>
-                  <Image
-                    boxSize={"300px"}
-                    objectFit={"cover"}
-                    src={`${imgPath}${movie?.poster_path || movie?.backdrop_path}`}
-                    alt={movie?.title || movie?.original_title}
-                  />
-                </Box>
-                <Box flex={1} px={"1rem"}>
-                  <Heading as={"h3"}>
-                    <Box as={"span"}>Title:</Box> {movie?.title || movie?.original_title}
-                  </Heading>
-                  <Text as={"p"}>
-                    <Box as={"span"} fontWeight={"bold"}>
-                      Release Date:
-                    </Box>{" "}
-                    {movie?.release_date}
-                  </Text>
-                  <Text as={"p"}>
-                    <Box as={"span"} fontWeight={"bold"}>
-                      Genre(s):
-                    </Box>{" "}
-                    {movie?.genre_ids.map((genreId, index) => (
-                      <span key={genreId}>
-                        {GENRES[genreId]}
-                        {index < movie?.genre_ids.length - 1 && ", "}
-                      </span>
-                    ))}
-                  </Text>
-                  <Text as={"p"}>
-                    <Box as={"span"} fontWeight={"bold"}>
-                      Overview:
-                    </Box>{" "}
-                    {truncate(movie?.overview, 150)}
-                  </Text>
-                </Box>
-              </Flex>
-            </Box>
-          ))}
+      {currentMovies.length > 0 && !query && <BlinkingText />}
 
-        {(!movies || !Array.isArray(movies) || movies.length === 0) && <Box>{content}</Box>}
+      <Box w={"90%"} m={"0 auto"}>
+        {currentMovies &&
+          currentMovies.map((movie, index) => <Movie key={index} movie={movie} onClick={() => handleClick(movie)} />)}
+
+        {(!currentMovies || !Array.isArray(currentMovies) || currentMovies.length === 0) && <Box>{content}</Box>}
       </Box>
+
+      <Flex my={"2rem"} justifyContent={"flex-end"} gap={4} alignItems={"center"} w={"90%"} mx={"auto"}>
+        <PageNavigationButton
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          text={"<"}
+        />
+        Page {currentPage} of {totalPages}
+        <PageNavigationButton
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          text={">"}
+        />
+      </Flex>
+
+      {trailerUrl && <TrailerModal trailerUrl={trailerUrl} onClose={() => setTrailerUrl("")} />}
+      {openMovieInfoModal && (
+        <MovieInfoModal
+          movie={movie}
+          openMovieModal={openMovieInfoModal}
+          setOpenMovieInfoModal={setOpenMovieInfoModal}
+        />
+      )}
     </Box>
   );
 };
